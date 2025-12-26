@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 # Настройки страницы
 st.set_page_config(page_title="Basketball Analytics", layout="wide")
 
-DB_PATH = "/root/basketball_project/data/basketball.db"
+DB_PATH = "data/basketball.db"
 
 # Функции для работы с базой данных
 @st.cache_data(ttl=3600)
