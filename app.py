@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import requests
@@ -13,7 +14,7 @@ st.set_page_config(page_title="Панель аналитики баскетбо�
 st.title("🏀 Панель аналитики баскетбола")
 
 # Функции для работы с API
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, show_spinner=False)
 def get_leagues():
     """Получить список лиг"""
     try:
@@ -22,7 +23,7 @@ def get_leagues():
     except:
         return pd.DataFrame()
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=60, show_spinner=False)
 def get_games(date):
     """Получить игры на дату"""
     try:
@@ -31,7 +32,7 @@ def get_games(date):
     except:
         return []
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=300, show_spinner=False)
 def get_team_averages(team_id, limit):
     """Получить средние показатели команды"""
     try:
@@ -41,7 +42,7 @@ def get_team_averages(team_id, limit):
     except:
         return None
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=300, show_spinner=False)
 def get_last_games(team_id, limit):
     """Получить последние матчи команды"""
     try:
@@ -50,7 +51,7 @@ def get_last_games(team_id, limit):
     except:
         return []
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=300, show_spinner=False)
 def get_h2h(team1_id, team2_id, season):
     """Получить личные встречи"""
     try:
@@ -59,7 +60,7 @@ def get_h2h(team1_id, team2_id, season):
     except:
         return []
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=300, show_spinner=False)
 def get_rest_days(team_id):
     """Получить дни отдыха команды"""
     try:
@@ -115,13 +116,12 @@ for game in games:
         st.markdown(f"**Дата:** {game['date'][:16]} | **Статус:** {game['status']}")
         
         # Получаем статистику для обеих команд
-        with st.spinner('Загрузка статистики...'):
-            home_avg_5 = get_team_averages(home_id, 5)
-            away_avg_5 = get_team_averages(away_id, 5)
-            home_avg_10 = get_team_averages(home_id, 10)
-            away_avg_10 = get_team_averages(away_id, 10)
-            home_rest = get_rest_days(home_id)
-            away_rest = get_rest_days(away_id)
+        home_avg_5 = get_team_averages(home_id, 5)
+        away_avg_5 = get_team_averages(away_id, 5)
+        home_avg_10 = get_team_averages(home_id, 10)
+        away_avg_10 = get_team_averages(away_id, 10)
+        home_rest = get_rest_days(home_id)
+        away_rest = get_rest_days(away_id)
         
         # Основная статистика в таблице
         st.markdown("### 📊 Основная статистика")
