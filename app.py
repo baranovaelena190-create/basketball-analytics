@@ -218,8 +218,15 @@ for game in games:
                 for lg in home_last_5:
                     quarters_str = ""
                     if lg.get('quarters'):
-                        q_scores = [q.get('home_score' if lg['is_home'] else 'away_score', 0) for q in lg['quarters'][:4]]
-                        quarters_str = f"Q: {'-'.join(map(str, q_scores))}"
+                        # Проверяем is_home как число
+                        is_home = lg.get('is_home', 0)
+                        q_scores = []
+                        for q in lg['quarters'][:4]:
+                            if is_home == 1:
+                                q_scores.append(str(q.get('home_score', 0)))
+                            else:
+                                q_scores.append(str(q.get('away_score', 0)))
+                        quarters_str = f"Q: {'-'.join(q_scores)}"
                     
                     last_games_data.append({
                         'Дата': lg['date'][:10],
@@ -246,8 +253,15 @@ for game in games:
                 for lg in away_last_5:
                     quarters_str = ""
                     if lg.get('quarters'):
-                        q_scores = [q.get('home_score' if lg['is_home'] else 'away_score', 0) for q in lg['quarters'][:4]]
-                        quarters_str = f"Q: {'-'.join(map(str, q_scores))}"
+                        # Проверяем is_home как число
+                        is_home = lg.get('is_home', 0)
+                        q_scores = []
+                        for q in lg['quarters'][:4]:
+                            if is_home == 1:
+                                q_scores.append(str(q.get('home_score', 0)))
+                            else:
+                                q_scores.append(str(q.get('away_score', 0)))
+                        quarters_str = f"Q: {'-'.join(q_scores)}"
                     
                     last_games_data.append({
                         'Дата': lg['date'][:10],
@@ -273,9 +287,9 @@ for game in games:
             for h2h in h2h_games:
                 quarters_str = ""
                 if h2h.get('quarters'):
-                    home_q = [q.get('home_score', 0) for q in h2h['quarters'][:4]]
-                    away_q = [q.get('away_score', 0) for q in h2h['quarters'][:4]]
-                    quarters_str = f"H: {'-'.join(map(str, home_q))} | A: {'-'.join(map(str, away_q))}"
+                    home_q = [str(q.get('home_score', 0)) for q in h2h['quarters'][:4]]
+                    away_q = [str(q.get('away_score', 0)) for q in h2h['quarters'][:4]]
+                    quarters_str = f"H: {'-'.join(home_q)} | A: {'-'.join(away_q)}"
                 
                 h2h_data.append({
                     'Дата': h2h['date'][:10],
