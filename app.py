@@ -216,13 +216,21 @@ for game in games:
             if home_last_5:
                 last_games_data = []
                 for lg in home_last_5:
+                    # Определяем счет команды
+                    if lg['home_team_id'] == home_id:
+                        team_score = lg['home_score']
+                        opp_score = lg['away_score']
+                        is_home_game = True
+                    else:
+                        team_score = lg['away_score']
+                        opp_score = lg['home_score']
+                        is_home_game = False
+                    
                     quarters_str = ""
                     if lg.get('quarters'):
-                        # Проверяем is_home как число
-                        is_home = lg.get('is_home', 0)
                         q_scores = []
                         for q in lg['quarters'][:4]:
-                            if is_home == 1:
+                            if is_home_game:
                                 q_scores.append(str(q.get('home_score', 0)))
                             else:
                                 q_scores.append(str(q.get('away_score', 0)))
@@ -232,7 +240,7 @@ for game in games:
                         'Дата': lg['date'][:10],
                         'Соперник': lg['opponent_name'],
                         'Место': lg['location'],
-                        'Счёт': f"{lg['team_score']}-{lg['opponent_score']}",
+                        'Счёт': f"{team_score}-{opp_score}",
                         'Рез-т': lg['result'] or '-',
                         'Четверти': quarters_str
                     })
@@ -251,13 +259,21 @@ for game in games:
             if away_last_5:
                 last_games_data = []
                 for lg in away_last_5:
+                    # Определяем счет команды
+                    if lg['home_team_id'] == away_id:
+                        team_score = lg['home_score']
+                        opp_score = lg['away_score']
+                        is_home_game = True
+                    else:
+                        team_score = lg['away_score']
+                        opp_score = lg['home_score']
+                        is_home_game = False
+                    
                     quarters_str = ""
                     if lg.get('quarters'):
-                        # Проверяем is_home как число
-                        is_home = lg.get('is_home', 0)
                         q_scores = []
                         for q in lg['quarters'][:4]:
-                            if is_home == 1:
+                            if is_home_game:
                                 q_scores.append(str(q.get('home_score', 0)))
                             else:
                                 q_scores.append(str(q.get('away_score', 0)))
@@ -267,7 +283,7 @@ for game in games:
                         'Дата': lg['date'][:10],
                         'Соперник': lg['opponent_name'],
                         'Место': lg['location'],
-                        'Счёт': f"{lg['team_score']}-{lg['opponent_score']}",
+                        'Счёт': f"{team_score}-{opp_score}",
                         'Рез-т': lg['result'] or '-',
                         'Четверти': quarters_str
                     })
