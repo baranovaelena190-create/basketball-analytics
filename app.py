@@ -36,7 +36,8 @@ def get_team_averages(team_id, limit):
     """Получить средние показатели команды"""
     try:
         response = requests.get(f"{API_BASE}/team_averages/{team_id}/{limit}", timeout=10)
-        return response.json()
+        data = response.json()
+        return data if data.get('games_count', 0) > 0 else None
     except:
         return None
 
@@ -106,20 +107,21 @@ for game in games:
     away_id = game['away_team_id']
     season = game['season']
     
-    # Получаем статистику для обеих команд
-    home_avg_5 = get_team_averages(home_id, 5)
-    away_avg_5 = get_team_averages(away_id, 5)
-    home_avg_10 = get_team_averages(home_id, 10)
-    away_avg_10 = get_team_averages(away_id, 10)
-    home_rest = get_rest_days(home_id)
-    away_rest = get_rest_days(away_id)
-    
     # Заголовок матча
     match_title = f"**{game['home_team_name']}** vs **{game['away_team_name']}** — {game['league_name']}"
     
     with st.expander(match_title, expanded=False):
         # Информация о матче
         st.markdown(f"**Дата:** {game['date'][:16]} | **Статус:** {game['status']}")
+        
+        # Получаем статистику для обеих команд
+        with st.spinner('Загрузка статистики...'):
+            home_avg_5 = get_team_averages(home_id, 5)
+            away_avg_5 = get_team_averages(away_id, 5)
+            home_avg_10 = get_team_averages(home_id, 10)
+            away_avg_10 = get_team_averages(away_id, 10)
+            home_rest = get_rest_days(home_id)
+            away_rest = get_rest_days(away_id)
         
         # Основная статистика в таблице
         st.markdown("### 📊 Основная статистика")
@@ -134,65 +136,65 @@ for game in games:
         }
         
         # Добавляем средние за последние 5 игр
-        if home_avg_5 and away_avg_5:
+        if home_avg_5 is not None and away_avg_5 is not None:
             stats_data['Ср. очки (5 игр)'] = [
-                f"{home_avg_5.get('avg_score', 0):.1f}",
-                f"{away_avg_5.get('avg_score', 0):.1f}"
+                f"{home_avg_5['avg_score']:.1f}",
+                f"{away_avg_5['avg_score']:.1f}"
             ]
             stats_data['Q1 (5)'] = [
-                f"{home_avg_5.get('quarters', {}).get('q1', 0):.1f}",
-                f"{away_avg_5.get('quarters', {}).get('q1', 0):.1f}"
+                f"{home_avg_5['quarters'].get('q1', 0):.1f}",
+                f"{away_avg_5['quarters'].get('q1', 0):.1f}"
             ]
             stats_data['Q2 (5)'] = [
-                f"{home_avg_5.get('quarters', {}).get('q2', 0):.1f}",
-                f"{away_avg_5.get('quarters', {}).get('q2', 0):.1f}"
+                f"{home_avg_5['quarters'].get('q2', 0):.1f}",
+                f"{away_avg_5['quarters'].get('q2', 0):.1f}"
             ]
             stats_data['Q3 (5)'] = [
-                f"{home_avg_5.get('quarters', {}).get('q3', 0):.1f}",
-                f"{away_avg_5.get('quarters', {}).get('q3', 0):.1f}"
+                f"{home_avg_5['quarters'].get('q3', 0):.1f}",
+                f"{away_avg_5['quarters'].get('q3', 0):.1f}"
             ]
             stats_data['Q4 (5)'] = [
-                f"{home_avg_5.get('quarters', {}).get('q4', 0):.1f}",
-                f"{away_avg_5.get('quarters', {}).get('q4', 0):.1f}"
+                f"{home_avg_5['quarters'].get('q4', 0):.1f}",
+                f"{away_avg_5['quarters'].get('q4', 0):.1f}"
             ]
             stats_data['H1 (5)'] = [
-                f"{home_avg_5.get('halves', {}).get('h1', 0):.1f}",
-                f"{away_avg_5.get('halves', {}).get('h1', 0):.1f}"
+                f"{home_avg_5['halves'].get('h1', 0):.1f}",
+                f"{away_avg_5['halves'].get('h1', 0):.1f}"
             ]
             stats_data['H2 (5)'] = [
-                f"{home_avg_5.get('halves', {}).get('h2', 0):.1f}",
-                f"{away_avg_5.get('halves', {}).get('h2', 0):.1f}"
+                f"{home_avg_5['halves'].get('h2', 0):.1f}",
+                f"{away_avg_5['halves'].get('h2', 0):.1f}"
             ]
         
         # Добавляем средние за последние 10 игр
-        if home_avg_10 and away_avg_10:
+        if home_avg_10 is not None and away_avg_10 is not None:
             stats_data['Ср. очки (10 игр)'] = [
-                f"{home_avg_10.get('avg_score', 0):.1f}",
-                f"{away_avg_10.get('avg_score', 0):.1f}"
+                f"{home_avg_10['avg_score']:.1f}",
+                f"{away_avg_10['avg_score']:.1f}"
             ]
             stats_data['Q1 (10)'] = [
-                f"{home_avg_10.get('quarters', {}).get('q1', 0):.1f}",
-                f"{away_avg_10.get('quarters', {}).get('q1', 0):.1f}"
+                f"{home_avg_10['quarters'].get('q1', 0):.1f}",
+                f"{away_avg_10['quarters'].get('q1', 0):.1f}"
             ]
             stats_data['Q2 (10)'] = [
-                f"{home_avg_10.get('quarters', {}).get('q2', 0):.1f}",
-                f"{away_avg_10.get('quarters', {}).get('q2', 0):.1f}"
+                f"{home_avg_10['quarters'].get('q2', 0):.1f}",
+                f"{away_avg_10['quarters'].get('q2', 0):.1f}"
             ]
             stats_data['Q3 (10)'] = [
-                f"{home_avg_10.get('quarters', {}).get('q3', 0):.1f}",
-                f"{away_avg_10.get('quarters', {}).get('q3', 0):.1f}"
+                f"{home_avg_10['quarters'].get('q3', 0):.1f}",
+                f"{away_avg_10['quarters'].get('q3', 0):.1f}"
             ]
             stats_data['Q4 (10)'] = [
-                f"{home_avg_10.get('quarters', {}).get('q4', 0):.1f}",
-                f"{away_avg_10.get('quarters', {}).get('q4', 0):.1f}"
+                f"{home_avg_10['quarters'].get('q4', 0):.1f}",
+                f"{away_avg_10['quarters'].get('q4', 0):.1f}"
             ]
             stats_data['H1 (10)'] = [
-                f"{home_avg_10.get('halves', {}).get('h1', 0):.1f}",
-                f"{away_avg_10.get('halves', {}).get('h1', 0):.1f}"
+                f"{home_avg_10['halves'].get('h1', 0):.1f}",
+                f"{away_avg_10['halves'].get('h1', 0):.1f}"
             ]
             stats_data['H2 (10)'] = [
-                f"{home_avg_10.get('halves', {}).get('h2', 0):.1f}",
-                f"{away_avg_10.get('halves', {}).get('h2', 0):.1f}"
+                f"{home_avg_10['halves'].get('h2', 0):.1f}",
+                f"{away_avg_10['halves'].get('h2', 0):.1f}"
             ]
         
         stats_df = pd.DataFrame(stats_data)
