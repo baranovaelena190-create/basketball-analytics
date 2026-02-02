@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-CORS(app)  # Разрешаем запросы с любых доменов
+CORS(app)
 
 DB_PATH = "/root/basketball_project/data/basketball.db"
 
@@ -80,7 +80,6 @@ def get_last_games(team_id, limit):
     """
     rows = _db_query(query, (team_id, team_id, team_id, team_id, team_id, team_id, limit))
     
-    # Добавляем данные по четвертям для каждой игры
     for row in rows:
         quarters = _db_query("SELECT * FROM quarters WHERE game_id = ? ORDER BY quarter_num", (row['id'],))
         row['quarters'] = quarters
@@ -103,11 +102,12 @@ def get_h2h(team1_id, team2_id, season):
            OR (g.home_team_id = ? AND g.away_team_id = ?))
       AND g.season = ?
       AND g.status = 'FT'
+      AND g.home_score IS NOT NULL
+      AND g.away_score IS NOT NULL
     ORDER BY g.date DESC
     """
     rows = _db_query(query, (team1_id, team2_id, team2_id, team1_id, season))
     
-    # Добавляем данные по четвертям
     for row in rows:
         quarters = _db_query("SELECT * FROM quarters WHERE game_id = ? ORDER BY quarter_num", (row['id'],))
         row['quarters'] = quarters
@@ -117,7 +117,6 @@ def get_h2h(team1_id, team2_id, season):
 @app.route('/api/team_averages/<int:team_id>/<int:limit>', methods=['GET'])
 def get_team_averages(team_id, limit):
     """Получить средние показатели команды за последние N игр"""
-    # Получаем последние N завершённых матчей
     games_query = """
     SELECT g.*,
            CASE WHEN g.home_team_id = ? THEN g.home_score ELSE g.away_score END as team_score,
@@ -143,12 +142,10 @@ def get_team_averages(team_id, limit):
             'halves': {}
         })
     
-    # Считаем средние по основным показателям
     avg_score = sum(g['team_score'] for g in games) / len(games)
     avg_opponent = sum(g['opponent_score'] for g in games) / len(games)
     avg_total = avg_score + avg_opponent
     
-    # Получаем данные по четвертям
     quarters_sum = {'q1': [], 'q2': [], 'q3': [], 'q4': []}
     
     for game in games:
@@ -157,8 +154,7 @@ def get_team_averages(team_id, limit):
         if quarters:
             for q in quarters:
                 quarter_num = q['quarter_num']
-                if quarter_num <= 4:  # Учитываем только основные четверти
-                    # Если команда играла дома - берём home_score, иначе away_score
+                if quarter_num <= 4:
                     if game['is_home']:
                         score = q['home_score'] or 0
                     else:
@@ -166,7 +162,6 @@ def get_team_averages(team_id, limit):
                     
                     quarters_sum[f'q{quarter_num}'].append(score)
     
-    # Считаем средние по четвертям
     quarters_avg = {}
     for q_key, scores in quarters_sum.items():
         if scores:
@@ -174,7 +169,6 @@ def get_team_averages(team_id, limit):
         else:
             quarters_avg[q_key] = 0
     
-    # Считаем половины
     halves_avg = {}
     if quarters_avg.get('q1', 0) > 0 and quarters_avg.get('q2', 0) > 0:
         halves_avg['h1'] = round(quarters_avg['q1'] + quarters_avg['q2'], 1)
@@ -213,6 +207,68 @@ def get_team_rest_days(team_id):
         return jsonify({'rest_days': rest_days, 'last_game_date': result[0]['last_game_date']})
     
     return jsonify({'rest_days': None, 'last_game_date': None})
+
+@app.route('/api/h2h_averages/<int:team1_id>/<int:team2_id>/<season>', methods=['GET'])
+def get_h2h_averages(team1_id, team2_id, season):
+    """Получить средние показатели по личным встречам"""
+    query = """
+    SELECT g.*
+    FROM games g
+    WHERE ((g.home_team_id = ? AND g.away_team_id = ?)
+           OR (g.home_team_id = ? AND g.away_team_id = ?))
+      AND g.season = ?
+      AND g.status = 'FT'
+      AND g.home_score IS NOT NULL
+      AND g.away_score IS NOT NULL
+    ORDER BY g.date DESC
+    """
+    games = _db_query(query, (team1_id, team2_id, team2_id, team1_id, season))
+    
+    if not games:
+        return jsonify({
+            'games_count': 0,
+            'team1_avg': 0,
+            'team2_avg': 0,
+            'team1_quarters': {},
+            'team2_quarters': {}
+        })
+    
+    team1_scores = []
+    team2_scores = []
+    team1_quarters = {'q1': [], 'q2': [], 'q3': [], 'q4': []}
+    team2_quarters = {'q1': [], 'q2': [], 'q3': [], 'q4': []}
+    
+    for game in games:
+        if game['home_team_id'] == team1_id:
+            team1_scores.append(game['home_score'])
+            team2_scores.append(game['away_score'])
+            team1_is_home = True
+        else:
+            team1_scores.append(game['away_score'])
+            team2_scores.append(game['home_score'])
+            team1_is_home = False
+        
+        quarters = _db_query("SELECT * FROM quarters WHERE game_id = ? ORDER BY quarter_num", (game['id'],))
+        if quarters:
+            for q in quarters[:4]:
+                qnum = q['quarter_num']
+                if team1_is_home:
+                    team1_quarters[f'q{qnum}'].append(q['home_score'] or 0)
+                    team2_quarters[f'q{qnum}'].append(q['away_score'] or 0)
+                else:
+                    team1_quarters[f'q{qnum}'].append(q['away_score'] or 0)
+                    team2_quarters[f'q{qnum}'].append(q['home_score'] or 0)
+    
+    team1_quarters_avg = {k: round(sum(v)/len(v), 1) if v else 0 for k, v in team1_quarters.items()}
+    team2_quarters_avg = {k: round(sum(v)/len(v), 1) if v else 0 for k, v in team2_quarters.items()}
+    
+    return jsonify({
+        'games_count': len(games),
+        'team1_avg': round(sum(team1_scores)/len(team1_scores), 1) if team1_scores else 0,
+        'team2_avg': round(sum(team2_scores)/len(team2_scores), 1) if team2_scores else 0,
+        'team1_quarters': team1_quarters_avg,
+        'team2_quarters': team2_quarters_avg
+    })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
